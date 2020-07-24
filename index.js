@@ -2,6 +2,9 @@ const express = require('express')
 const app = express()
 const port = 5000
 const bodyParser = require('body-parser');
+
+const config = require('./config/key');
+
 const {User} = require("./models/User"); //User Model을 가져오는 것
 
 //application/x-www-form-urlencoded
@@ -11,7 +14,7 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
 
 const mongoose = require('mongoose')
-mongoose.connect('mongodb+srv://leehyunggeol:glglg12345@boilerplate.adktl.mongodb.net/<dbname>?retryWrites=true&w=majority', {
+mongoose.connect(config.mongoURL, {
     useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true, useFindAndModify: false
 }).then(() => console.log('MongoDB Connected...'))
     .catch(err => console.log(err))
