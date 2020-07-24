@@ -66,7 +66,7 @@ userSchema.methods.comparePassword = function(plainPassword, callback) {
     //암호화를 한 다음에 암호화된 비밀번호와 비교
     bcrypt.compare(plainPassword, this.password, function(err, isMatch){
         if(err) return callback(err);
-        
+
         callback(null, isMatch);
 
     }) 
@@ -81,11 +81,29 @@ userSchema.methods.generateToken = function(callback) {
 
     user.token = token
     user.save(function(err, user) {
-        if(err) return callback(err);
+        if(err) 
+            return callback(err);
 
         callback(null, user);
     })
 
+}
+
+userSchema.statics.findByToken = function (token, callback) {
+    var user = this;
+
+    //user._id + '' = token
+    //Token을 Decode 한다.
+    jwt.verify(token, 'secretToken', function (err, decoded) {
+        //유저 아이디를 이용해서 유저를 찾은 다음에
+        //Client에서 가져온 token과 DB에 보관된 토큰이 일치하는지 확인
+
+        user.findOne({ "_id": decoded, "token": token }, function (err, user) {
+            if (err)
+                return callback(err);
+            callback(null, user)
+        })
+    })
 }
 
 const User = mongoose.model('User', userSchema)

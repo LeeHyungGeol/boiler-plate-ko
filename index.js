@@ -6,7 +6,8 @@ const bodyParser = require('body-parser');
 
 const config = require('./config/key');
 
-const {User} = require("./models/User"); //User Model을 가져오는 것
+const { auth } = require('./middleware/auth');
+const { User } = require("./models/User"); //User Model을 가져오는 것
 
 //application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({extended: true}));
@@ -22,7 +23,7 @@ mongoose.connect(config.mongoURL, {
     .catch(err => console.log(err))
 
 
-app.post('/register', (req, res) => {
+app.post('/api/users/register', (req, res) => {
     //회원가입에 필요한 정보들을 Client에서 가져오면
     //그것들을 DB에 넣어준다
 
@@ -38,7 +39,9 @@ app.post('/register', (req, res) => {
 })//register Route //회원가입을 위한 route
 
 
-app.post('/login', (req, res) => {
+//  '/api/users/login' <- 이것이 EndPoint!!!!
+
+app.post('/api/users/login', (req, res) => {
 
     //요청된 이메일을 DB에서 있는지 찾는다.
     User.findOne({ email: req.body.email }, (err, user) => {
@@ -65,6 +68,41 @@ app.post('/login', (req, res) => {
         })
     })
 })//Login Route
+
+
+
+
+// 정책 Example
+// role 1 이면 Admin, role 2이면 특정 부서 Admin
+// role 0 이면 일반 User, role 0이 아니면 관리자 
+
+//  '/api/users/auth' <- 이것이 EndPoint!!!!
+
+app.get('/api/users/auth', auth, (req, res) => { //auth는 middleware
+
+    //여기까지 middleware를 통과해 왔다는 얘기는 Authentication이 True라는 것을 의미.
+    res.status(200).json( {
+        _id: req.user._id,
+        isAdmin: req.user.role === 0 ? false : true,
+        email: req.user.email,
+        name: req.user.name,
+        lastname: req.user.lastname,
+        role: req.user.role,
+        image: req.user.image
+    })
+})
+
+app.get('/api/users/logout', auth, (req, res) => {
+    User.findOneAndUpdate({ _id: req.user._id },
+        { token: "" },
+        (err, user) => {
+            if (err)
+                return res.json({ success: false, err });
+            return res.status(200).send({
+                success: true
+            });
+        })
+})
 
 
 app.get('/', (req, res) => res.send('안녕하세요~~')) //아주 간단한 route
